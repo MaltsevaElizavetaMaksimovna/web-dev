@@ -42,7 +42,7 @@ function findAll({ includeHidden = false, topicId = null, search = '', sort = 'n
 
   // Поиск по названию и описанию без учёта регистра
   if (search) {
-    conditions.push('(LOWER(l.title) LIKE @search OR LOWER(l.description) LIKE @search)');
+    conditions.push('(RULOWER(l.title) LIKE @search OR RULOWER(l.description) LIKE @search)');
     params.search = `%${search.toLowerCase()}%`;
   }
 
@@ -71,7 +71,7 @@ function countAll({ includeHidden = false, topicId = null, search = '' } = {}) {
   }
 
   if (search) {
-    conditions.push('(LOWER(title) LIKE @search OR LOWER(description) LIKE @search)');
+    conditions.push('(RULOWER(title) LIKE @search OR RULOWER(description) LIKE @search)');
     params.search = `%${search.toLowerCase()}%`;
   }
 

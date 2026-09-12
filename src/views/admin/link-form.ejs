@@ -1,0 +1,147 @@
+<%#
+  Форма добавления и изменения ссылки (ЛБ 4).
+  Один шаблон обслуживает оба режима: режим определяется переменной link.
+%>
+<%- include('../partials/head', { title: title }) %>
+<div class="page">
+  <%- include('../partials/adminbar') %>
+  <%- include('../partials/header') %>
+
+  <main class="page__body">
+    <div class="container">
+      <%- include('../partials/adminnav') %>
+      <%- include('../partials/flash') %>
+
+      <div class="page-head">
+        <div class="page-head__title">
+          <h1><%= link ? 'Изменение ссылки' : 'Добавление ссылки' %></h1>
+          <% if (link) { %>
+            <span class="page-head__count">запись № <%= link.id %></span>
+          <% } %>
+        </div>
+        <p class="page-head__description">
+          Поля, отмеченные звёздочкой, обязательны для заполнения.
+          Данные проверяются на сервере перед сохранением в базу.
+        </p>
+      </div>
+
+      <%# --- Сообщения об ошибках проверки данных --- %>
+      <% if (errors && errors.length > 0) { %>
+        <div class="alert alert--error" role="alert">
+          <div>
+            <strong>Данные не сохранены, обнаружены ошибки:</strong>
+            <ul class="alert__list">
+              <% errors.forEach(function (error) { %>
+                <li><%= error %></li>
+              <% }); %>
+            </ul>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="panel" style="max-width: 720px;">
+        <form method="POST"
+              action="<%= link ? '/admin/links/' + link.id + '/edit' : '/admin/links/new' %>"
+              id="link-form" novalidate>
+
+          <div class="form-group">
+            <label class="form-label" for="title">Название ссылки <span aria-hidden="true">*</span></label>
+            <input class="input" type="text" id="title" name="title"
+                   value="<%= formData.title %>"
+                   maxlength="120" required autofocus
+                   placeholder="Например: Документация по CSS">
+            <div class="form-hint">От 2 до 120 символов.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="url">Адрес ресурса <span aria-hidden="true">*</span></label>
+            <input class="input" type="text" id="url" name="url"
+                   value="<%= formData.url %>"
+                   maxlength="500" required
+                   placeholder="https://example.com">
+            <div class="form-hint">
+              Допустимы адреса, начинающиеся с http:// или https://.
+              Если схема не указана, автоматически подставляется https://.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="topicId">Тема каталога <span aria-hidden="true">*</span></label>
+            <select class="select" id="topicId" name="topicId" required>
+              <option value="">— выберите тему —</option>
+              <% topics.forEach(function (topic) { %>
+                <option value="<%= topic.id %>" <%= String(formData.topicId) === String(topic.id) ? 'selected' : '' %>>
+                  <%= topic.name %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="description">Описание</label>
+            <textarea class="textarea" id="description" name="description"
+                      maxlength="500"
+                      placeholder="Краткое описание ресурса для карточки каталога"><%= formData.description %></textarea>
+            <div class="form-hint">
+              Не более 500 символов. Осталось: <span id="description-counter">500</span>.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox">
+              <input type="checkbox" name="isHidden" <%= formData.isHidden ? 'checked' : '' %>>
+              <span>Скрыть ссылку от посетителей</span>
+            </label>
+            <div class="form-hint">
+              Скрытая ссылка видна только в панели управления и недоступна для перехода.
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn--primary" type="submit">
+              <%= link ? 'Сохранить изменения' : 'Добавить ссылку' %>
+            </button>
+            <a class="btn btn--secondary" href="/admin">Отменить</a>
+
+            <% if (link) { %>
+              <%# Удаление доступно прямо из формы изменения %>
+              <form method="POST" action="/admin/links/<%= link.id %>/delete"
+                    style="margin-left: auto;"
+                    data-confirm="Удалить ссылку «<%= link.title.replace(/"/g, '&quot;') %>»? Действие нельзя отменить.">
+                <button class="btn btn--danger" type="submit">Удалить ссылку</button>
+              </form>
+            <% } %>
+          </div>
+        </form>
+      </div>
+
+      <%# --- Сведения о записи при изменении --- %>
+      <% if (link) { %>
+        <div class="panel" style="max-width: 720px;">
+          <div class="panel__head">
+            <h2 class="panel__title">Сведения о записи</h2>
+          </div>
+          <table class="table table--compact">
+            <tbody>
+              <tr>
+                <td class="muted" style="width: 200px;">Количество переходов</td>
+                <td class="mono"><%= link.clicks %></td>
+              </tr>
+              <tr>
+                <td class="muted">Дата добавления</td>
+                <td class="mono"><%= link.created_at %></td>
+              </tr>
+              <tr>
+                <td class="muted">Дата последнего изменения</td>
+                <td class="mono"><%= link.updated_at %></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+</div>
+<script src="/js/admin.js"></script>

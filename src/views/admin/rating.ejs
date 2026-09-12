@@ -1,0 +1,161 @@
+<%# Страница рейтинга ссылок (ЛБ 5) %>
+<%- include('../partials/head', { title: title }) %>
+<div class="page">
+  <%- include('../partials/adminbar') %>
+  <%- include('../partials/header') %>
+
+  <main class="page__body">
+    <div class="container">
+      <%- include('../partials/adminnav') %>
+      <%- include('../partials/flash') %>
+
+      <div class="page-head">
+        <div class="page-head__title">
+          <h1>Рейтинг ссылок</h1>
+        </div>
+        <p class="page-head__description">
+          Раздел показывает, какие ресурсы каталога вызывают наибольший интерес.
+          Счётчик увеличивается при каждом переходе посетителя по ссылке.
+        </p>
+      </div>
+
+      <%# --- Сводные показатели --- %>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat__label">Всего ссылок</div>
+          <div class="stat__value"><%= statistics.total_links %></div>
+          <div class="stat__hint">из них скрыто: <%= statistics.hidden_links %></div>
+        </div>
+
+        <div class="stat">
+          <div class="stat__label">Всего переходов</div>
+          <div class="stat__value"><%= statistics.total_clicks %></div>
+          <div class="stat__hint">по всем ссылкам каталога</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat__label">В среднем на ссылку</div>
+          <div class="stat__value"><%= statistics.average_clicks %></div>
+          <div class="stat__hint">переходов</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat__label">Наибольший показатель</div>
+          <div class="stat__value"><%= statistics.max_clicks %></div>
+          <div class="stat__hint">переходов у лидера</div>
+        </div>
+      </div>
+
+      <%# --- Диаграмма по темам --- %>
+      <div class="panel">
+        <div class="panel__head">
+          <h2 class="panel__title">Распределение переходов по темам</h2>
+        </div>
+
+        <div class="chart">
+          <% byTopic.forEach(function (topic) { %>
+            <%
+              // Ширина полосы вычисляется относительно наибольшего значения
+              const width = maxTopicClicks > 0
+                ? Math.round((topic.total_clicks / maxTopicClicks) * 100)
+                : 0;
+            %>
+            <div class="chart__row">
+              <span class="chart__label" title="<%= topic.name %>">
+                <%= topic.name %>
+                <span class="muted">(<%= topic.links_count %>)</span>
+              </span>
+              <span class="chart__track">
+                <span class="chart__bar" style="width: <%= width %>%;"></span>
+              </span>
+              <span class="chart__value"><%= topic.total_clicks %></span>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+
+      <%# --- Таблица лидеров --- %>
+      <div class="panel">
+        <div class="panel__head">
+          <h2 class="panel__title">Наиболее популярные ссылки</h2>
+
+          <%# Количество выводимых записей выбирает пользователь --- %>
+          <form method="GET" action="/admin/rating" class="filters__row" style="margin: 0;">
+            <label class="filters__label" for="limit" style="align-self: center;">Показывать:</label>
+            <select class="select" id="limit" name="limit" style="width: auto;"
+                    onchange="this.form.submit()">
+              <option value="10" <%= limit === 10 ? 'selected' : '' %>>10 записей</option>
+              <option value="20" <%= limit === 20 ? 'selected' : '' %>>20 записей</option>
+              <option value="50" <%= limit === 50 ? 'selected' : '' %>>50 записей</option>
+            </select>
+            <noscript><button class="btn btn--secondary btn--sm" type="submit">Применить</button></noscript>
+          </form>
+        </div>
+
+        <% if (topLinks.length === 0) { %>
+          <div class="empty">
+            <div class="empty__title">Данных пока нет</div>
+            <p class="empty__text">Ни по одной ссылке ещё не было переходов.</p>
+          </div>
+        <% } else { %>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width: 56px;">Место</th>
+                  <th>Название</th>
+                  <th style="width: 150px;">Тема</th>
+                  <th style="width: 100px;">Состояние</th>
+                  <th style="width: 220px;">Доля переходов</th>
+                  <th style="width: 90px;" class="text-right">Переходы</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% topLinks.forEach(function (link, index) { %>
+                  <%
+                    const width = maxClicks > 0 ? Math.round((link.clicks / maxClicks) * 100) : 0;
+                    const share = statistics.total_clicks > 0
+                      ? ((link.clicks / statistics.total_clicks) * 100).toFixed(1)
+                      : '0.0';
+                  %>
+                  <tr class="<%= link.is_hidden ? 'row--hidden' : '' %>">
+                    <td class="table__num"><%= index + 1 %></td>
+
+                    <td>
+                      <strong class="table__title"><%= link.title %></strong>
+                      <div class="card__url" style="max-width: 320px;">
+                        <%= link.url.replace(/^https?:\/\//, '').replace(/\/$/, '') %>
+                      </div>
+                    </td>
+
+                    <td><span class="badge badge--muted"><%= link.topic_name %></span></td>
+
+                    <td>
+                      <% if (link.is_hidden) { %>
+                        <span class="badge badge--hidden">Скрыта</span>
+                      <% } else { %>
+                        <span class="badge badge--success">Видна</span>
+                      <% } %>
+                    </td>
+
+                    <td>
+                      <span class="chart__track" style="display: block;">
+                        <span class="chart__bar" style="width: <%= width %>%;"></span>
+                      </span>
+                      <span class="muted" style="font-size: 12px;"><%= share %> % от всех переходов</span>
+                    </td>
+
+                    <td class="table__num text-right"><strong><%= link.clicks %></strong></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+</div>
+<script src="/js/admin.js"></script>

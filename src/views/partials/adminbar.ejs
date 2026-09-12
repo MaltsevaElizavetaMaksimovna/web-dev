@@ -1,0 +1,16 @@
+<%# Полоса административной панели: сразу показывает, что открыт служебный раздел %>
+<div class="admin-bar">
+  <div class="container admin-bar__inner">
+    <span class="admin-bar__label">
+      <span class="admin-bar__dot" aria-hidden="true"></span>
+      Административная панель
+    </span>
+    <span class="admin-bar__user">
+      <% if (currentAdmin) { %>
+        Вы вошли как <strong><%= currentAdmin.login %></strong>
+        &nbsp;·&nbsp; <a href="/">Открыть сайт</a>
+        &nbsp;·&nbsp; <a href="/admin/logout">Выйти</a>
+      <% } %>
+    </span>
+  </div>
+</div>

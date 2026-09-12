@@ -1,0 +1,135 @@
+<%- include('../partials/head', { title: title }) %>
+<div class="page">
+  <%- include('../partials/header') %>
+
+  <main class="page__body">
+    <div class="container">
+      <%- include('../partials/flash') %>
+
+      <%# --- Заголовок раздела --- %>
+      <div class="page-head">
+        <div class="page-head__title">
+          <h1><%= currentTopic ? currentTopic.name : 'Каталог ссылок' %></h1>
+          <span class="page-head__count">
+            <% if (pagination.total === 0) { %>
+              ничего не найдено
+            <% } else { %>
+              найдено ссылок: <%= pagination.total %>
+            <% } %>
+          </span>
+        </div>
+        <p class="page-head__description">
+          <%= currentTopic
+              ? currentTopic.description
+              : 'Подборка проверенных веб-ресурсов для разработчиков и дизайнеров. Выберите тему или воспользуйтесь поиском.' %>
+        </p>
+      </div>
+
+      <%# --- Панель фильтрации (ЛБ 2) --- %>
+      <form class="filters" method="GET" action="/" id="filter-form">
+        <div class="filters__row">
+          <div class="filters__field">
+            <label class="filters__label" for="search">Поиск по названию и описанию</label>
+            <input class="input" type="search" id="search" name="search"
+                   value="<%= filters.search %>"
+                   placeholder="Например: документация"
+                   maxlength="100" autocomplete="off">
+          </div>
+
+          <div class="filters__field" style="flex: 0 0 200px;">
+            <label class="filters__label" for="sort">Порядок вывода</label>
+            <select class="select" id="sort" name="sort">
+              <option value="new"     <%= filters.sort === 'new'     ? 'selected' : '' %>>Сначала новые</option>
+              <option value="popular" <%= filters.sort === 'popular' ? 'selected' : '' %>>По числу переходов</option>
+              <option value="title"   <%= filters.sort === 'title'   ? 'selected' : '' %>>По алфавиту</option>
+              <option value="old"     <%= filters.sort === 'old'     ? 'selected' : '' %>>Сначала старые</option>
+            </select>
+          </div>
+
+          <%# Выбранная тема передаётся скрытым полем, чтобы не потеряться при поиске %>
+          <% if (filters.topicId) { %>
+            <input type="hidden" name="topic" value="<%= filters.topicId %>">
+          <% } %>
+
+          <button class="btn btn--primary" type="submit">Применить</button>
+
+          <% if (filters.search || filters.topicId || filters.sort !== 'new') { %>
+            <a class="btn btn--secondary" href="/">Сбросить</a>
+          <% } %>
+        </div>
+
+        <%# --- Темы каталога (ЛБ 2) --- %>
+        <div class="topics">
+          <a class="topic-chip <%= !filters.topicId ? 'topic-chip--active' : '' %>"
+             href="/<%= filters.search ? '?search=' + encodeURIComponent(filters.search) : '' %>">
+            Все темы
+          </a>
+          <% topics.forEach(function (topic) { %>
+            <a class="topic-chip <%= filters.topicId === topic.id ? 'topic-chip--active' : '' %>"
+               href="/?topic=<%= topic.id %><%= filters.search ? '&search=' + encodeURIComponent(filters.search) : '' %>">
+              <%= topic.name %>
+              <span class="topic-chip__count"><%= topic.links_count %></span>
+            </a>
+          <% }); %>
+        </div>
+      </form>
+
+      <%# --- Карточки ссылок (ЛБ 1) --- %>
+      <% if (links.length === 0) { %>
+        <div class="empty">
+          <div class="empty__icon" aria-hidden="true">🔍</div>
+          <div class="empty__title">Ничего не найдено</div>
+          <p class="empty__text">
+            По заданным условиям ссылок нет. Измените поисковый запрос или выберите другую тему.
+          </p>
+          <a class="btn btn--secondary" href="/">Показать все ссылки</a>
+        </div>
+      <% } else { %>
+        <div class="cards">
+          <% links.forEach(function (link) { %>
+            <article class="card">
+              <div class="card__head">
+                <h2 class="card__title">
+                  <%# Переход выполняется через служебный адрес, чтобы учесть его в статистике %>
+                  <a href="/go/<%= link.id %>" target="_blank" rel="noopener noreferrer">
+                    <%= link.title %>
+                  </a>
+                </h2>
+                <a class="badge" href="/?topic=<%= link.topic_id %>"><%= link.topic_name %></a>
+              </div>
+
+              <p class="card__description"><%= link.description %></p>
+
+              <div class="card__footer">
+                <span class="card__url" title="<%= link.url %>">
+                  <%= link.url.replace(/^https?:\/\//, '').replace(/\/$/, '') %>
+                </span>
+                <span class="card__meta" title="Количество переходов по ссылке">
+                  <span aria-hidden="true">↗</span>
+                  <span><%= link.clicks %></span>
+                </span>
+              </div>
+            </article>
+          <% }); %>
+        </div>
+
+        <%# --- Постраничная навигация --- %>
+        <%
+          // Параметры фильтрации сохраняются при переходе между страницами
+          const params = [];
+          if (filters.search) params.push('search=' + encodeURIComponent(filters.search));
+          if (filters.topicId) params.push('topic=' + filters.topicId);
+          if (filters.sort !== 'new') params.push('sort=' + filters.sort);
+        %>
+        <%- include('../partials/pagination', {
+              pagination: pagination,
+              baseUrl: '/',
+              queryString: params.join('&')
+            }) %>
+      <% } %>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+</div>
+<script src="/js/catalog.js"></script>

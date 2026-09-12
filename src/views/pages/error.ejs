@@ -1,0 +1,32 @@
+<%- include('../partials/head', { title: title }) %>
+<div class="page">
+  <%- include('../partials/header') %>
+
+  <main class="page__body">
+    <div class="container">
+      <div class="empty">
+        <div class="empty__icon" aria-hidden="true">
+          <%= status === 404 ? '🔍' : '⚠' %>
+        </div>
+        <div class="empty__title">
+          <%= status === 404 ? 'Страница не найдена' : 'Произошла ошибка' %>
+        </div>
+        <p class="empty__text"><%= message %></p>
+
+        <%# Подробности показываются только в режиме отладки (ЛБ 8) %>
+        <% if (typeof details !== 'undefined' && details) { %>
+          <div class="alert alert--error" style="text-align: left; margin: 0 auto 16px; max-width: 640px;">
+            <div>
+              <strong>Техническая информация</strong>
+              <pre class="mono" style="margin: 8px 0 0; white-space: pre-wrap; font-size: 12px;"><%= details %></pre>
+            </div>
+          </div>
+        <% } %>
+
+        <a class="btn btn--primary" href="/">Вернуться в каталог</a>
+      </div>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+</div>

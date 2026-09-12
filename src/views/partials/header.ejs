@@ -1,0 +1,22 @@
+<%# Шапка сайта: логотип и основная навигация %>
+<header class="header">
+  <div class="container header__inner">
+    <a class="logo" href="/">
+      <span class="logo__mark" aria-hidden="true">К</span>
+      <span>
+        <span class="logo__title">Поисковый каталог</span><br>
+        <span class="logo__subtitle">Подборка полезных веб-ресурсов</span>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Основная навигация">
+      <a class="nav__link <%= currentPath === '/' ? 'nav__link--active' : '' %>" href="/">Каталог</a>
+      <a class="nav__link <%= currentPath.startsWith('/topics') ? 'nav__link--active' : '' %>" href="/topics">Темы</a>
+      <% if (currentAdmin) { %>
+        <a class="nav__link" href="/admin">Панель управления</a>
+      <% } else { %>
+        <a class="nav__link" href="/admin/login">Вход для администратора</a>
+      <% } %>
+    </nav>
+  </div>
+</header>

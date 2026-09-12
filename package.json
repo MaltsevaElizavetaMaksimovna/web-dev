@@ -1,0 +1,33 @@
+{
+  "name": "poisk-catalog",
+  "version": "1.0.0",
+  "description": "Поисковый каталог — лабораторные работы по основам веб-разработки (вариант 10)",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js",
+    "debug": "node --inspect src/app.js",
+    "seed": "node src/models/seed.js"
+  },
+  "keywords": [
+    "express",
+    "ejs",
+    "sqlite",
+    "catalog"
+  ],
+  "author": "Мальцева Е.М., группа 8ВМ61",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.5.0",
+    "connect-sqlite3": "^0.9.15",
+    "ejs": "^3.1.10",
+    "express": "^4.21.1",
+    "express-session": "^1.18.1"
+  },
+  "overrides": {
+    "tar": "^7.5.21",
+    "qs": "^6.15.4",
+    "@tootallnate/once": "^2.0.1"
+  }
+}

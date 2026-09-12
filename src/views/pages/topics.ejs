@@ -1,0 +1,44 @@
+<%- include('../partials/head', { title: title }) %>
+<div class="page">
+  <%- include('../partials/header') %>
+
+  <main class="page__body">
+    <div class="container">
+      <%- include('../partials/flash') %>
+
+      <div class="page-head">
+        <div class="page-head__title">
+          <h1>Темы каталога</h1>
+          <span class="page-head__count">всего тем: <%= topics.length %></span>
+        </div>
+        <p class="page-head__description">
+          Ссылки каталога распределены по тематическим разделам.
+          Выберите раздел, чтобы увидеть относящиеся к нему ресурсы.
+        </p>
+      </div>
+
+      <div class="cards">
+        <% topics.forEach(function (topic) { %>
+          <article class="card">
+            <div class="card__head">
+              <h2 class="card__title">
+                <a href="/?topic=<%= topic.id %>"><%= topic.name %></a>
+              </h2>
+              <span class="badge badge--muted"><%= topic.links_count %></span>
+            </div>
+
+            <p class="card__description"><%= topic.description %></p>
+
+            <div class="card__footer">
+              <a class="btn btn--secondary btn--sm" href="/?topic=<%= topic.id %>">
+                Перейти к ссылкам
+              </a>
+            </div>
+          </article>
+        <% }); %>
+      </div>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+</div>

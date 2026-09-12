@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    container_name: poisk-catalog
+    ports:
+      - "3000:3000"
+    volumes:
+      # Данные сохраняются между перезапусками контейнера
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PORT=3000
+      - NODE_ENV=development
+    restart: unless-stopped

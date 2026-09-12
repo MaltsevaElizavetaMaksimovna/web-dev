@@ -1,0 +1,150 @@
+<%- include('../partials/head', { title: title }) %>
+<div class="page">
+  <%- include('../partials/adminbar') %>
+  <%- include('../partials/header') %>
+
+  <main class="page__body">
+    <div class="container">
+      <%- include('../partials/adminnav') %>
+      <%- include('../partials/flash') %>
+
+      <div class="page-head">
+        <div class="page-head__title">
+          <h1>Каталог ссылок</h1>
+          <span class="page-head__count">всего записей: <%= pagination.total %></span>
+        </div>
+        <p class="page-head__description">
+          В этом разделе показаны все ссылки каталога, включая скрытые от посетителей.
+          Скрытые записи выделены меткой и не отображаются на пользовательских страницах.
+        </p>
+      </div>
+
+      <%# --- Фильтрация записей --- %>
+      <form class="filters" method="GET" action="/admin">
+        <div class="filters__row">
+          <div class="filters__field">
+            <label class="filters__label" for="search">Поиск по названию и описанию</label>
+            <input class="input" type="search" id="search" name="search"
+                   value="<%= filters.search %>" placeholder="Введите текст для поиска"
+                   maxlength="100" autocomplete="off">
+          </div>
+
+          <div class="filters__field" style="flex: 0 0 200px;">
+            <label class="filters__label" for="topic">Тема</label>
+            <select class="select" id="topic" name="topic">
+              <option value="">Все темы</option>
+              <% topics.forEach(function (topic) { %>
+                <option value="<%= topic.id %>" <%= filters.topicId === topic.id ? 'selected' : '' %>>
+                  <%= topic.name %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
+
+          <div class="filters__field" style="flex: 0 0 190px;">
+            <label class="filters__label" for="sort">Порядок вывода</label>
+            <select class="select" id="sort" name="sort">
+              <option value="new"     <%= filters.sort === 'new'     ? 'selected' : '' %>>Сначала новые</option>
+              <option value="popular" <%= filters.sort === 'popular' ? 'selected' : '' %>>По числу переходов</option>
+              <option value="title"   <%= filters.sort === 'title'   ? 'selected' : '' %>>По алфавиту</option>
+            </select>
+          </div>
+
+          <button class="btn btn--primary" type="submit">Применить</button>
+          <a class="btn btn--secondary" href="/admin/links/new">Добавить ссылку</a>
+        </div>
+      </form>
+
+      <%# --- Таблица ссылок --- %>
+      <% if (links.length === 0) { %>
+        <div class="empty">
+          <div class="empty__icon" aria-hidden="true">📋</div>
+          <div class="empty__title">Записей нет</div>
+          <p class="empty__text">По заданным условиям ссылки не найдены.</p>
+          <a class="btn btn--secondary" href="/admin">Показать все записи</a>
+        </div>
+      <% } else { %>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width: 48px;">№</th>
+                <th>Название и адрес</th>
+                <th style="width: 150px;">Тема</th>
+                <th style="width: 110px;">Состояние</th>
+                <th style="width: 90px;" class="text-right">Переходы</th>
+                <th style="width: 230px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% links.forEach(function (link) { %>
+                <tr class="<%= link.is_hidden ? 'row--hidden' : '' %>">
+                  <td class="table__num"><%= link.id %></td>
+
+                  <td>
+                    <div class="table__title"><strong><%= link.title %></strong></div>
+                    <a class="card__url" href="<%= link.url %>" target="_blank" rel="noopener noreferrer"
+                       title="<%= link.url %>" style="display: block; max-width: 380px;">
+                      <%= link.url.replace(/^https?:\/\//, '').replace(/\/$/, '') %>
+                    </a>
+                  </td>
+
+                  <td><span class="badge badge--muted"><%= link.topic_name %></span></td>
+
+                  <td>
+                    <% if (link.is_hidden) { %>
+                      <span class="badge badge--hidden">Скрыта</span>
+                    <% } else { %>
+                      <span class="badge badge--success">Видна</span>
+                    <% } %>
+                  </td>
+
+                  <td class="table__num text-right"><%= link.clicks %></td>
+
+                  <td>
+                    <div class="table__actions">
+                      <%# Переключение видимости (ЛБ 3) %>
+                      <form method="POST" action="/admin/links/<%= link.id %>/toggle" style="display: inline;">
+                        <input type="hidden" name="returnTo" value="<%= currentPath %><%= pagination.page > 1 ? '?page=' + pagination.page : '' %>">
+                        <button class="btn btn--secondary btn--sm" type="submit">
+                          <%= link.is_hidden ? 'Показать' : 'Скрыть' %>
+                        </button>
+                      </form>
+
+                      <%# Изменение записи (ЛБ 4) %>
+                      <a class="btn btn--secondary btn--sm" href="/admin/links/<%= link.id %>/edit">Изменить</a>
+
+                      <%# Удаление записи с подтверждением (ЛБ 4) %>
+                      <form method="POST" action="/admin/links/<%= link.id %>/delete"
+                            style="display: inline;"
+                            data-confirm="Удалить ссылку «<%= link.title.replace(/"/g, '&quot;') %>»? Действие нельзя отменить.">
+                        <input type="hidden" name="returnTo" value="<%= currentPath %><%= pagination.page > 1 ? '?page=' + pagination.page : '' %>">
+                        <button class="btn btn--danger btn--sm" type="submit">Удалить</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+
+        <%
+          // Сохранение условий фильтрации при переходе между страницами
+          const params = [];
+          if (filters.search) params.push('search=' + encodeURIComponent(filters.search));
+          if (filters.topicId) params.push('topic=' + filters.topicId);
+          if (filters.sort !== 'new') params.push('sort=' + filters.sort);
+        %>
+        <%- include('../partials/pagination', {
+              pagination: pagination,
+              baseUrl: '/admin',
+              queryString: params.join('&')
+            }) %>
+      <% } %>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+</div>
+<script src="/js/admin.js"></script>

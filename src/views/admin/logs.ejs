@@ -1,0 +1,198 @@
+<%# Страница просмотра журнала действий (ЛБ 6) %>
+<%- include('../partials/head', { title: title }) %>
+<div class="page">
+  <%- include('../partials/adminbar') %>
+  <%- include('../partials/header') %>
+
+  <main class="page__body">
+    <div class="container">
+      <%- include('../partials/adminnav') %>
+      <%- include('../partials/flash') %>
+
+      <div class="page-head">
+        <div class="page-head__title">
+          <h1>Журнал действий</h1>
+          <span class="page-head__count">записей: <%= pagination.total %></span>
+        </div>
+        <p class="page-head__description">
+          Все действия посетителей и администратора записываются в файл
+          <span class="mono">logs/actions.json</span> в формате JSON.
+          Каждая строка файла содержит отдельную запись с датой, временем и описанием действия.
+        </p>
+      </div>
+
+      <%# --- Сводка по уровням важности --- %>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat__label">Всего записей</div>
+          <div class="stat__value"><%= summary.total %></div>
+          <div class="stat__hint">в текущем файле журнала</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat__label">Обычные события</div>
+          <div class="stat__value"><%= summary.byLevel.info || 0 %></div>
+          <div class="stat__hint">просмотры, переходы, изменения</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat__label">Предупреждения</div>
+          <div class="stat__value"><%= summary.byLevel.warning || 0 %></div>
+          <div class="stat__hint">отказы в доступе, ошибки ввода</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat__label">Ошибки</div>
+          <div class="stat__value"><%= summary.byLevel.error || 0 %></div>
+          <div class="stat__hint">сбои в работе приложения</div>
+        </div>
+      </div>
+
+      <%# --- Фильтрация записей журнала --- %>
+      <form class="filters" method="GET" action="/admin/logs">
+        <div class="filters__row">
+          <div class="filters__field">
+            <label class="filters__label" for="action">Действие</label>
+            <select class="select" id="action" name="action">
+              <option value="">Все действия</option>
+              <% Object.keys(actions).forEach(function (code) { %>
+                <option value="<%= code %>" <%= filters.action === code ? 'selected' : '' %>>
+                  <%= actions[code] %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
+
+          <div class="filters__field" style="flex: 0 0 180px;">
+            <label class="filters__label" for="level">Уровень важности</label>
+            <select class="select" id="level" name="level">
+              <option value="">Любой</option>
+              <option value="info"    <%= filters.level === 'info'    ? 'selected' : '' %>>Обычное событие</option>
+              <option value="warning" <%= filters.level === 'warning' ? 'selected' : '' %>>Предупреждение</option>
+              <option value="error"   <%= filters.level === 'error'   ? 'selected' : '' %>>Ошибка</option>
+            </select>
+          </div>
+
+          <div class="filters__field" style="flex: 0 0 160px;">
+            <label class="filters__label" for="dateFrom">Период с</label>
+            <input class="input" type="date" id="dateFrom" name="dateFrom" value="<%= filters.dateFrom %>">
+          </div>
+
+          <div class="filters__field" style="flex: 0 0 160px;">
+            <label class="filters__label" for="dateTo">по</label>
+            <input class="input" type="date" id="dateTo" name="dateTo" value="<%= filters.dateTo %>">
+          </div>
+
+          <button class="btn btn--primary" type="submit">Применить</button>
+
+          <% if (filters.action || filters.level || filters.dateFrom || filters.dateTo) { %>
+            <a class="btn btn--secondary" href="/admin/logs">Сбросить</a>
+          <% } %>
+        </div>
+      </form>
+
+      <%# --- Таблица записей журнала --- %>
+      <% if (entries.length === 0) { %>
+        <div class="empty">
+          <div class="empty__icon" aria-hidden="true">📄</div>
+          <div class="empty__title">Записей нет</div>
+          <p class="empty__text">
+            <% if (summary.total === 0) { %>
+              Журнал пока пуст. Выполните действия на сайте, и они появятся в этом списке.
+            <% } else { %>
+              По заданным условиям записи не найдены. Измените параметры фильтрации.
+            <% } %>
+          </p>
+          <% if (summary.total > 0) { %>
+            <a class="btn btn--secondary" href="/admin/logs">Показать все записи</a>
+          <% } %>
+        </div>
+      <% } else { %>
+        <div class="table-wrap">
+          <table class="table table--compact">
+            <thead>
+              <tr>
+                <th style="width: 30px;"><span class="visually-hidden">Уровень важности</span></th>
+                <th style="width: 92px;">Дата</th>
+                <th style="width: 78px;">Время</th>
+                <th style="width: 210px;">Действие</th>
+                <th style="width: 130px;">Пользователь</th>
+                <th>Объект и подробности</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% entries.forEach(function (entry) { %>
+                <tr>
+                  <td>
+                    <span class="log-level log-level--<%= entry.level %>"
+                          title="<%= entry.level === 'info' ? 'Обычное событие'
+                                    : entry.level === 'warning' ? 'Предупреждение' : 'Ошибка' %>"></span>
+                  </td>
+
+                  <td class="log-time"><%= entry.date %></td>
+                  <td class="log-time"><%= entry.time %></td>
+
+                  <td><%= entry.actionLabel %></td>
+
+                  <td>
+                    <% if (entry.actor.type === 'admin') { %>
+                      <span class="badge"><%= entry.actor.login %></span>
+                    <% } else { %>
+                      <span class="badge badge--muted">посетитель</span>
+                    <% } %>
+                  </td>
+
+                  <td>
+                    <% if (entry.target && entry.target.title) { %>
+                      <span><%= entry.target.title %></span>
+                    <% } %>
+                    <% if (entry.details) { %>
+                      <div class="log-details" title="<%= JSON.stringify(entry.details) %>">
+                        <%= JSON.stringify(entry.details) %>
+                      </div>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+
+        <%
+          // Условия фильтрации сохраняются при переходе между страницами
+          const params = [];
+          if (filters.action) params.push('action=' + encodeURIComponent(filters.action));
+          if (filters.level) params.push('level=' + encodeURIComponent(filters.level));
+          if (filters.dateFrom) params.push('dateFrom=' + filters.dateFrom);
+          if (filters.dateTo) params.push('dateTo=' + filters.dateTo);
+        %>
+        <%- include('../partials/pagination', {
+              pagination: pagination,
+              baseUrl: '/admin/logs',
+              queryString: params.join('&')
+            }) %>
+      <% } %>
+
+      <%# --- Очистка журнала --- %>
+      <% if (summary.total > 0) { %>
+        <div class="panel" style="margin-top: 24px;">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title">Очистка журнала</h2>
+              <p class="muted mb-0" style="font-size: 13px;">
+                Все записи будут удалены без возможности восстановления.
+              </p>
+            </div>
+            <form method="POST" action="/admin/logs/clear"
+                  data-confirm="Удалить все записи журнала? Действие нельзя отменить.">
+              <button class="btn btn--danger" type="submit">Очистить журнал</button>
+            </form>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+</div>
+<script src="/js/admin.js"></script>

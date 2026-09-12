@@ -1,0 +1,50 @@
+<%#
+  Постраничная навигация.
+  Ожидает переменные:
+    pagination - объект с полями page, totalPages, hasPrev, hasNext
+    baseUrl    - адрес страницы без параметров
+    queryString - строка остальных параметров запроса (может быть пустой)
+%>
+<% if (pagination.totalPages > 1) { %>
+  <%
+    // Формирование адреса страницы с сохранением остальных параметров фильтрации
+    const buildUrl = (page) => {
+      const parts = [];
+      if (typeof queryString !== 'undefined' && queryString) parts.push(queryString);
+      parts.push('page=' + page);
+      return baseUrl + '?' + parts.join('&');
+    };
+
+    // Показываем не более пяти номеров страниц вокруг текущей
+    const windowSize = 5;
+    let first = Math.max(1, pagination.page - Math.floor(windowSize / 2));
+    let last = Math.min(pagination.totalPages, first + windowSize - 1);
+    first = Math.max(1, last - windowSize + 1);
+  %>
+
+  <nav class="pagination" aria-label="Навигация по страницам">
+    <a class="pagination__link <%= pagination.hasPrev ? '' : 'pagination__link--disabled' %>"
+       href="<%= pagination.hasPrev ? buildUrl(pagination.page - 1) : '#' %>"
+       aria-label="Предыдущая страница">←</a>
+
+    <% if (first > 1) { %>
+      <a class="pagination__link" href="<%= buildUrl(1) %>">1</a>
+      <% if (first > 2) { %><span class="pagination__info">…</span><% } %>
+    <% } %>
+
+    <% for (let p = first; p <= last; p++) { %>
+      <a class="pagination__link <%= p === pagination.page ? 'pagination__link--active' : '' %>"
+         href="<%= buildUrl(p) %>"
+         <%= p === pagination.page ? 'aria-current="page"' : '' %>><%= p %></a>
+    <% } %>
+
+    <% if (last < pagination.totalPages) { %>
+      <% if (last < pagination.totalPages - 1) { %><span class="pagination__info">…</span><% } %>
+      <a class="pagination__link" href="<%= buildUrl(pagination.totalPages) %>"><%= pagination.totalPages %></a>
+    <% } %>
+
+    <a class="pagination__link <%= pagination.hasNext ? '' : 'pagination__link--disabled' %>"
+       href="<%= pagination.hasNext ? buildUrl(pagination.page + 1) : '#' %>"
+       aria-label="Следующая страница">→</a>
+  </nav>
+<% } %>

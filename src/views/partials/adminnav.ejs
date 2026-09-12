@@ -1,0 +1,13 @@
+<%# Навигация внутри административной панели %>
+<nav class="filters" aria-label="Разделы панели управления">
+  <div class="nav">
+    <a class="nav__link <%= currentPath === '/admin' ? 'nav__link--active' : '' %>"
+       href="/admin">Каталог ссылок</a>
+    <a class="nav__link <%= currentPath.startsWith('/admin/links/new') ? 'nav__link--active' : '' %>"
+       href="/admin/links/new">Добавить ссылку</a>
+    <a class="nav__link <%= currentPath === '/admin/rating' ? 'nav__link--active' : '' %>"
+       href="/admin/rating">Рейтинг</a>
+    <a class="nav__link <%= currentPath === '/admin/logs' ? 'nav__link--active' : '' %>"
+       href="/admin/logs">Журнал действий</a>
+  </div>
+</nav>

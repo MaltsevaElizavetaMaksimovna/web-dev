@@ -28,19 +28,23 @@ const SELECT_BASE = `
  * @param {number} options.offset - сколько записей пропустить
  * @returns {Array<object>} массив ссылок
  */
+// 2 лр считает количество ссылок в каждой категории
+//массив conditions накапливает условия;
+
+//каждое условие — только если соответствующий фильтр задан;
 function findAll({ includeHidden = false, topicId = null, search = '', sort = 'new', limit = 9, offset = 0 } = {}) {
   const conditions = [];
   const params = {};
 
   // Обычный посетитель видит только открытые ссылки
   if (!includeHidden) conditions.push('l.is_hidden = 0');
-
+//если есть тема
   if (topicId) {
     conditions.push('l.topic_id = @topicId');
     params.topicId = topicId;
   }
 
-  // Поиск по названию и описанию без учёта регистра
+  // если есть Поиск по названию и описанию без учёта регистра
   if (search) {
     conditions.push('(RULOWER(l.title) LIKE @search OR RULOWER(l.description) LIKE @search)');
     params.search = `%${search.toLowerCase()}%`;
@@ -51,12 +55,12 @@ function findAll({ includeHidden = false, topicId = null, search = '', sort = 'n
 
   params.limit = limit;
   params.offset = offset;
-
+//Постраничный вывод
   return db.prepare(`${SELECT_BASE} ${where} ${orderBy} LIMIT @limit OFFSET @offset`).all(params);
 }
 
 /**
- * Подсчитывает общее количество ссылок, подходящих под фильтры.
+ * 2 лр Подсчитывает общее количество ссылок, подходящих под фильтры.
  * Используется для расчёта числа страниц при постраничном выводе.
  */
 function countAll({ includeHidden = false, topicId = null, search = '' } = {}) {
@@ -64,27 +68,36 @@ function countAll({ includeHidden = false, topicId = null, search = '' } = {}) {
   const params = {};
 
   if (!includeHidden) conditions.push('is_hidden = 0');
-
+//2 ЛР динамически собираем sql 
+//2 лр если тема выбрана - дополняется условие
   if (topicId) {
     conditions.push('topic_id = @topicId');
     params.topicId = topicId;
   }
-
+//2 лр если поиск есть - добавляем еще условие 
+//(условия работают ч/з and)
   if (search) {
     conditions.push('(RULOWER(title) LIKE @search OR RULOWER(description) LIKE @search)');
     params.search = `%${search.toLowerCase()}%`;
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  //2 ЛР  ФИЛЬТРАЦИЯ ВЫПОЛНЯЕТСЯ НА СЕРВЕРЕ
+  // В SQL ЗАПРОСЕ
+  //Сервер отдаёт в браузер только те ссылк 
+  // которые подходят под условия. Клиентский JS 
+  // только отправляет форму — он не фильтрует 
+  // данные.
   return db.prepare(`SELECT COUNT(*) AS total FROM links ${where}`).get(params).total;
 }
 
-/** Возвращает одну ссылку по идентификатору либо undefined, если её нет. */
+/** Возвращает одну ссылку по идентификатору либо undefined, если её нет. *////!!!
 function findById(id) {
   return db.prepare(`${SELECT_BASE} WHERE l.id = ?`).get(id);
 }
 
-/** Проверяет, существует ли ссылка с таким адресом (защита от дубликатов). */
+/** Проверяет, существует ли ссылка с таким адресом (защита от дубликатов). !!!!*/
 function findByUrl(url) {
   return db.prepare('SELECT id, title FROM links WHERE url = ?').get(url);
 }
@@ -122,7 +135,7 @@ function remove(id) {
 }
 
 /**
- * Переключает видимость ссылки (ЛБ 3).
+ * ФУНКЦИЮ Переключает видимость ссылки (3 ЛР).
  * @returns {number|null} новое значение признака или null, если записи нет
  */
 function toggleVisibility(id) {
@@ -138,7 +151,7 @@ function toggleVisibility(id) {
 
 /** Увеличивает счётчик переходов по ссылке на единицу (ЛБ 1 и ЛБ 5). */
 function incrementClicks(id) {
-  db.prepare('UPDATE links SET clicks = clicks + 1 WHERE id = ?').run(id);
+  db.prepare('UPDATE links SET clicks = clicks + 1 WHERE id = ?').run(id);//БАЗА УВЕЛИЧИВАЕТ СЧЕТЧИК
 }
 
 /**
@@ -178,7 +191,7 @@ function getClicksByTopic() {
   `).all();
 }
 
-/** Формирует фрагмент ORDER BY по названию режима сортировки. */
+/**2 ЛР Формирует фрагмент ORDER BY по названию режима сортировки. */
 function buildOrderBy(sort) {
   switch (sort) {
     case 'popular': return 'ORDER BY l.clicks DESC, l.title ASC';
